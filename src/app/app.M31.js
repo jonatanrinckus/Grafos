@@ -189,17 +189,7 @@ class App extends React.Component {
 
     let path;
     let i = 0;
-    while (
-      (path = this.getPath(
-        this.DFS(
-          nodes.filter(n => n !== font && n !== sorvedor),
-          [font],
-          font,
-          sorvedor
-        )
-      ))
-    ) {
-      
+    while ((path = this.getPath(this.DFS(font, sorvedor)))) {
       console.log("path", path);
       if (!path.length || i == 50) {
         break;
@@ -249,24 +239,33 @@ class App extends React.Component {
     });
   }
 
-  DFS(nodesAux, pilha, node, destino) {
+  DFS(node, destino) {
     let found = false;
-
-    while (!found && nodesAux.length) {
-      node.visitado = true;
-
-      let nexts = node.edges.map(c => c.node);
-
-      for (let next of nexts) {
-        if (!next.visitado) {
-          pilha.push(next);
-
-          found = next == destino;
-        }
+    let pilha = [node];
+    let toVisit = [node];
+    
+    
+    let i = 0;
+    while (node && i< 10) { 
+      let next = node.edges.find(e => !e.node.visited);
+      if (next) {
+        node = next.node;
+        pilha.unshift(next.node);
+      }else{
+        node.visited = true;
+        pilha = pilha.filter(n => n == node);
       }
 
-      node = nodesAux.shift();
+      if(node == destino){
+        break;
+      }
+
+      if(node.visited){
+        node = pilha.shift();
+      }
+      i += 1;
     }
+
     console.log("pilha", [...pilha]);
     return pilha;
   }
@@ -275,8 +274,8 @@ class App extends React.Component {
     let path = [];
 
     while (aux.length) {
-      let prev = aux.shift();
-      let next = aux[0];
+      let prev = aux.pop();
+      let next = aux[aux.length-1];
       if (next) {
         let p = prev.edges.find(e => e.from == prev && e.node == next);
         if (p) {
