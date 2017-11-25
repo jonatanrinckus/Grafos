@@ -132,8 +132,7 @@ class App extends React.Component {
         id: this.index,
         label: node.toUpperCase(),
         color: "#FFF",
-        edges: [],
-        distance: -1
+        edges: []
       });
       this.index = this.index + 1;
     });
@@ -178,11 +177,7 @@ class App extends React.Component {
 
     console.log("nodes", nodes);
 
-    for (let ed of nodeEdges) {
-      ed.capacity = ed.size;
-    }
-
-    console.log("nodeEdges", nodeEdges);
+    //console.log("nodeEdges", nodeEdges);
 
     let fontAndSorvedor = this.checkSuperFontOrSuperSorvedor(
       this.detectFontAndSorvedor(nodes)
@@ -191,62 +186,61 @@ class App extends React.Component {
     let { font, sorvedor } = fontAndSorvedor;
     let s = 0;
     let node = font;
-    let atual = font;
 
-    this.dijkstra(nodeEdges, nodes, atual);
-
+    let path;
     let i = 0;
-    while (nodeEdges.find(e => e.capacity > 0)) {
-      let nodesAux = nodes.filter(n => n !== node);
-      let sEdge;
-
-      while (nodesAux.length) {
-        let nexts = node.edges.map(c => c.node);
-
-        let edge = this.getMinEdge(node);
-
-        while (nexts.length && edge) {
-          if (!sEdge || edge.size < sEdge.size) sEdge = edge;
-
-          var next = nexts.pop();
-          if (next) {
-            edge = this.getMinEdge(next);
-          } else {
-            edge = undefined;
-          }
-        }
-
-        node = nodesAux.pop();
+    while (
+      (path = this.getPath(
+        this.DFS(
+          nodes.filter(n => n !== font && n !== sorvedor),
+          [font],
+          font,
+          sorvedor
+        )
+      ))
+    ) {
+      
+      console.log("path", path);
+      if (!path.length || i == 50) {
+        break;
       }
-      if (!sEdge) {
-        console.log("sEdge", sEdge);
-        return;
-      }
-      s += sEdge.size;
+      i += 1;
 
-      sEdge.capacity -= sEdge.capacity;
+      let smallEdge = path.sort((a, b) => a.size - b.size).slice(0, 1)[0];
 
-      let before = sEdge.from;
-      let to = sEdge.node;
+      let size = smallEdge.size;
 
-      while (before) {
-        let ed = to.edges.find(e => node == e.from && before == e.node);
-        if (ed) {
-          ed.capacity += sEdge.size;
+      s += size;
+
+      for (let item of path) {
+        item.size = item.size - size;
+
+        item.from.edges = item.from.edges.filter(e => e.size > 0);
+
+        let inverse = item.node.edges.find(e => e.node.id == item.from.id);
+
+        if (inverse) {
+          inverse.size += size;
         } else {
-          ed = { from: to, node: before, size: sEdge.size };
-
-          to.edges.push(ed);
-          nodeEdges.push(ed);
-          before = before.before;
+          item.node.edges.push({
+            from: item.node,
+            node: item.from,
+            size: size
+          });
         }
-
-        i += 1;
-        if (i == 50) return;
       }
+    }
 
-      console.log("sEdge", sEdge);
-      console.log("before", before);
+    edges = [];
+
+    for (let n of nodes) {
+      for (let e of n.edges) {
+        edges.push({
+          from: e.from.id,
+          to: e.node.id,
+          label: e.size
+        });
+      }
     }
 
     this.setState({
@@ -255,23 +249,43 @@ class App extends React.Component {
     });
   }
 
-  dijkstra(nodeEdges, nodes, atual) {
-    atual.distance = 0;
-    while (nodeEdges.find(e => !e.closed && atual)) {
-      for (let edge of atual.edges) {
-        if (
-          edge.node.distance == -1 ||
-          edge.node.distance > atual.distance + edge.size
-        ) {
-          edge.node.distance = atual.distance + edge.size;
-          edge.node.before = atual;
+  DFS(nodesAux, pilha, node, destino) {
+    let found = false;
+
+    while (!found && nodesAux.length) {
+      node.visitado = true;
+
+      let nexts = node.edges.map(c => c.node);
+
+      for (let next of nexts) {
+        if (!next.visitado) {
+          pilha.push(next);
+
+          found = next == destino;
         }
       }
-      atual.closed = true;
-      atual = nodes
-        .sort((a, b) => a.distance - b.distance)
-        .find(n => n.distance != -1 && !n.closed);
+
+      node = nodesAux.shift();
     }
+    console.log("pilha", [...pilha]);
+    return pilha;
+  }
+
+  getPath(aux) {
+    let path = [];
+
+    while (aux.length) {
+      let prev = aux.shift();
+      let next = aux[0];
+      if (next) {
+        let p = prev.edges.find(e => e.from == prev && e.node == next);
+        if (p) {
+          path.push(p);
+        }
+      }
+    }
+
+    return path;
   }
 
   getMinEdge(node) {
