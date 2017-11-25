@@ -68,6 +68,7 @@ class App extends React.Component {
       graph: { nodes: nodes, edges: edges },
       graphSeccond: { nodes: nodesSeccond, edges: edgesSeccond },
       options: options,
+      maxFlow: 0,
       draw: false,
       drawSeccond: false,
       nodesToAdd: "F,V1,S,V2",
@@ -220,6 +221,7 @@ class App extends React.Component {
         }
       }
     }
+    console.log(s);
 
     edges = [];
 
@@ -234,6 +236,7 @@ class App extends React.Component {
     }
 
     this.setState({
+      maxFlow: s,
       drawSeccond: true,
       graphSeccond: { nodes: nodes, edges: edges }
     });
@@ -243,24 +246,23 @@ class App extends React.Component {
     let found = false;
     let pilha = [node];
     let toVisit = [node];
-    
-    
+
     let i = 0;
-    while (node && i< 10) { 
+    while (node && i < 10) {
       let next = node.edges.find(e => !e.node.visited);
       if (next) {
         node = next.node;
         pilha.unshift(next.node);
-      }else{
+      } else {
         node.visited = true;
         pilha = pilha.filter(n => n == node);
       }
 
-      if(node == destino){
+      if (node == destino) {
         break;
       }
 
-      if(node.visited){
+      if (node.visited) {
         node = pilha.shift();
       }
       i += 1;
@@ -275,7 +277,7 @@ class App extends React.Component {
 
     while (aux.length) {
       let prev = aux.pop();
-      let next = aux[aux.length-1];
+      let next = aux[aux.length - 1];
       if (next) {
         let p = prev.edges.find(e => e.from == prev && e.node == next);
         if (p) {
@@ -393,12 +395,15 @@ class App extends React.Component {
     }
     if (drawSeccond) {
       toDrawSeccond = (
-        <Graph
-          graph={this.state.graphSeccond}
-          options={this.state.options}
-          events={events}
-          style={{ height: "640px" }}
-        />
+        <div>
+          <span>Max flow: {this.state.maxFlow}</span>
+          <Graph
+            graph={this.state.graphSeccond}
+            options={this.state.options}
+            events={events}
+            style={{ height: "640px" }}
+          />
+        </div>
       );
     }
 
