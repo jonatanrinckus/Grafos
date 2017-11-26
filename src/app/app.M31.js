@@ -192,7 +192,7 @@ class App extends React.Component {
     let i = 0;
     while ((path = this.getPath(this.DFS(font, sorvedor)))) {
       console.log("path", path);
-      if (!path.length || i == 50) {
+      if (!path.length || i == 500) {
         break;
       }
       i += 1;
@@ -252,7 +252,8 @@ class App extends React.Component {
       let next = node.edges.find(e => !e.node.visited);
       if (next) {
         node = next.node;
-        pilha.unshift(next.node);
+
+        if (!pilha.find(n => n == next.node)) pilha.unshift(next.node);
       } else {
         node.visited = true;
         pilha = pilha.filter(n => n == node);
